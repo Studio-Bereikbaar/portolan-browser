@@ -1,0 +1,82 @@
+# data.studiobereikbaar.nl — SB branded browser + public Portolan catalog.
+#
+# One host serves two audiences:
+#   humans  -> the Vue SPA baked into /srv at image build time
+#   machines-> the catalog (catalog.json, boundaries-*/…) proxied from the
+#              MinIO bucket `sb-public-data`
+#
+# Resolution order is deliberate: a real local SPA asset wins, otherwise MinIO
+# answers, and only when MinIO 404s do we hand back index.html so client-side
+# routes deep-link. That ordering means NEW COLLECTIONS NEED NO CONFIG CHANGE —
+# they simply exist in the bucket and are served.
+#
+# Why not expose sb-minio directly: it also holds sb-backups (50 GB restic) and
+# sb-geoparquet (9.7 GB internal datalake). Portolan MANDATES
+# `Access-Control-Allow-Origin: *`, so the public surface must be exactly the
+# one bucket. This config hard-codes the sb-public-data prefix; no other bucket
+# is reachable by any path.
+
+(sb_cors) {
+	header {
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		# This set is SPEC'D, not a judgement call — rashid PTL-LIV-004/005
+		# caught a hand-picked list missing Content-Type and If-Unmodified-Since.
+		# Re-run `rashid check . --live --live-base-url https://data.studiobereikbaar.nl`
+		# after touching it.
+		Access-Control-Expose-Headers "Content-Range, Content-Length, ETag, Accept-Ranges, Last-Modified, Content-Type"
+		-Server
+	}
+}
+
+:8080 {
+	log {
+		output stdout
+		format console
+	}
+
+	root * /srv
+
+	# MinIO-free liveness target for Uptime-Kuma and the container healthcheck.
+	handle /_health {
+		respond "ok" 200
+	}
+
+	# CORS preflight, answered before anything else touches the upstream.
+	@options method OPTIONS
+	handle @options {
+		import sb_cors
+		header Access-Control-Allow-Headers "Range, If-Match, If-None-Match, If-Modified-Since, If-Unmodified-Since, Content-Type"
+		header Access-Control-Max-Age "86400"
+		respond 204
+	}
+
+	# 1 — the SPA shell.
+	handle / {
+		rewrite * /index.html
+		file_server
+	}
+
+	# 2 — real files in the image (assets, fonts, logo) win over the bucket.
+	@spa_asset file
+	handle @spa_asset {
+		import sb_cors
+		file_server
+	}
+
+	# 3 — everything else is catalog, from the bucket; SPA fallback on 404 so
+	#     history-mode deep links resolve.
+	handle {
+		import sb_cors
+		# Deliberately NO `encode`: gzipping parquet/PMTiles wastes CPU on
+		# already-compressed payloads and breaks byte-range semantics.
+		rewrite * /sb-public-data{uri}
+		reverse_proxy http://sb-minio:9000 {
+			@notfound status 404
+			handle_response @notfound {
+				rewrite * /index.html
+				file_server
+			}
+		}
+	}
+}

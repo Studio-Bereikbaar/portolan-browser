@@ -1,0 +1,43 @@
+# Coolify app: SB branded Portolan browser + public catalog, data.studiobereikbaar.nl
+#
+# Build context is the REPO ROOT — Coolify runs
+#   docker compose --project-directory=<repo root> -f deploy/compose/compose.coolify.yml
+# so `context: .` and `dockerfile: deploy/Dockerfile` are both repo-relative.
+# A `../../` path here would resolve outside the tree and fail.
+#
+# Domain is set through the Coolify API (`docker_compose_domains`), not here —
+# the CLI cannot set it for compose apps. Coolify then injects the Traefik
+# labels and handles the certificate.
+#
+# Coolify ignores `container_name` (it renames to <service>-<appuuid>-<ts>), so
+# siblings must be addressed via a network alias, never the container name.
+# See feedback_coolify-dns-alias-collision.
+
+services:
+  browser:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    networks:
+      # sb-internal reaches sb-minio; coolify is where Traefik looks.
+      sb-internal:
+        aliases:
+          - sb-public-data-browser
+      coolify:
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/_health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+networks:
+  sb-internal:
+    external: true
+  coolify:
+    external: true

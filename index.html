@@ -15,10 +15,30 @@
     <base href="<%- pathPrefix %>" id="stac-browser-base">
     <script defer="defer" src="./runtime-config.js"></script>
     RC-->
-    <link rel="icon" type="image/svg+xml" href="/portolan-logo.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/sb-logo.png">
+    <!-- SB: Google Fonts (Archivo) removed — no third-party requests from a
+         public SB surface. ABC Diatype (SB huisstijl) is self-hosted from our
+         own origin instead, so this stays a zero-third-party page.
+         NB: confirm the Dinamo *webfont* licence covers a public domain — the
+         desktop licence behind the internal Streamlit tools does not
+         automatically extend to it. -->
+    <style>
+      @font-face {
+        font-family: 'ABC Diatype';
+        src: url('/fonts/ABCDiatype-Regular.woff2') format('woff2');
+        font-weight: 400; font-style: normal; font-display: swap;
+      }
+      @font-face {
+        font-family: 'ABC Diatype';
+        src: url('/fonts/ABCDiatype-Medium.woff2') format('woff2');
+        font-weight: 500; font-style: normal; font-display: swap;
+      }
+      @font-face {
+        font-family: 'ABC Diatype';
+        src: url('/fonts/ABCDiatype-Bold.woff2') format('woff2');
+        font-weight: 700; font-style: normal; font-display: swap;
+      }
+    </style>
     <title><%- catalogTitle %></title>
   </head>
   <body>

@@ -44,6 +44,20 @@ import { VECTOR_NOTICE_REPROJECTION, VECTOR_NOTICE_TOO_BIG, VECTOR_NOTICE_TOO_LA
 import { createLonLatTransform } from '../utils/crs.js';
 import proj4 from 'proj4';
 
+// SB: pre-register the Dutch national CRS so the epsg.io lookup below never
+// fires for our catalog. Every SB collection is EPSG:28992 (RD New), so without
+// this the browser makes a third-party request to epsg.io on every map view —
+// a privacy leak and a hard dependency on someone else's uptime for our own
+// front door. config.crs exists in config.js but is not wired to anything in
+// this fork, so it cannot be done by configuration (upstream candidate).
+proj4.defs(
+  'EPSG:28992',
+  '+proj=sterea +lat_0=52.1561605555556 +lon_0=5.38763888888889 +k=0.9999079 ' +
+    '+x_0=155000 +y_0=463000 +ellps=bessel ' +
+    '+towgs84=565.4171,50.3319,465.5524,-0.398957,0.343988,-1.87740,4.0725 ' +
+    '+units=m +no_defs'
+);
+
 // Every style's fields are read for every feature, though only one style is
 // ever active. Past this many, say so — a collection with a thematic style per
 // attribute can quietly multiply what the GeoParquet reader downloads.
