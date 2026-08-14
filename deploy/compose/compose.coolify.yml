@@ -32,7 +32,14 @@ services:
       # one — otherwise it registers the router and then 502s. `docker.network`
       # pins which of the container's networks Traefik dials.
       - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
+      # Target the per-app network, NOT `coolify`. Coolify substitutes its own
+      # generated network (named after the app UUID) for an external `coolify`
+      # declared in compose, so a container built here is never on `coolify` —
+      # pointing Traefik at it yields a 502 on every redeploy. coolify-proxy is
+      # itself attached to this per-app network, so this is the reachable one.
+      # Alternative if you prefer the UI: flip "Connect To Predefined Network"
+      # on the app, then this can go back to `coolify`.
+      - "traefik.docker.network=w80wwg8gco0cogo4c084w8cg"
       - "traefik.http.routers.sb-public-data.rule=Host(`data.studiobereikbaar.nl`)"
       - "traefik.http.routers.sb-public-data.entrypoints=https"
       - "traefik.http.routers.sb-public-data.tls=true"
