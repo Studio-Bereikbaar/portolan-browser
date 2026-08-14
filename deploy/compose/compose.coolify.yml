@@ -25,6 +25,19 @@ services:
         aliases:
           - sb-public-data-browser
       coolify:
+    labels:
+      # Explicit Traefik wiring, matching the sb-projects-frontend convention.
+      # Required because the caddy image exposes FIVE ports (80, 443/tcp,
+      # 443/udp, 2019, 8080) and Traefik only auto-detects when there is exactly
+      # one — otherwise it registers the router and then 502s. `docker.network`
+      # pins which of the container's networks Traefik dials.
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.sb-public-data.rule=Host(`data.studiobereikbaar.nl`)"
+      - "traefik.http.routers.sb-public-data.entrypoints=https"
+      - "traefik.http.routers.sb-public-data.tls=true"
+      - "traefik.http.routers.sb-public-data.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sb-public-data.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/_health"]
       interval: 30s
