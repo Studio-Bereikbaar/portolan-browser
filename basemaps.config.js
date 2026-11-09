@@ -1,19 +1,24 @@
 import { Collection, STAC } from 'stac-js';
 
+// SB (2026-11-09, Gio): frontend tools use a keyless PDOK basemap, never
+// CARTO/OSM. PDOK BRT Achtergrondkaart: keyless, CORS *, EPSG:3857 z0-19
+// (beyond 19 PDOK returns blank tiles, so maxzoom 19 makes MapLibre overzoom).
+// NL coverage only; no dark variant exists.
+const PDOK_BRT_ATTRIBUTION = 'Kaartgegevens &copy; <a href="https://www.pdok.nl/" target="_blank" rel="noopener">Kadaster (PDOK BRT)</a>';
+const pdokBrt = (variant, title) => ({
+  title,
+  raster: true,
+  tiles: [`https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/${variant}/EPSG:3857/{z}/{x}/{y}.png`],
+  maxzoom: 19,
+  attribution: PDOK_BRT_ATTRIBUTION,
+});
+
 const BASEMAPS = {
   earth: [
-    {
-      url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
-      title: 'Voyager',
-    },
-    {
-      url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-      title: 'Positron',
-    },
-    {
-      url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-      title: 'Dark Matter',
-    },
+    pdokBrt('grijs', 'PDOK grijs'),
+    pdokBrt('standaard', 'PDOK standaard'),
+    pdokBrt('pastel', 'PDOK pastel'),
+    pdokBrt('water', 'PDOK water'),
     {
       url: 'https://cholmes.github.io/overture-pmtiles-styles/style-satellite.json',
       title: 'Satellite',
