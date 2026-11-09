@@ -92,6 +92,7 @@ export default {
             tiles: basemap.tiles,
             tileSize: 256,
             attribution: basemap.attribution || '',
+            ...(typeof basemap.maxzoom === 'number' ? { maxzoom: basemap.maxzoom } : {}),
           }
         },
         layers: [{
